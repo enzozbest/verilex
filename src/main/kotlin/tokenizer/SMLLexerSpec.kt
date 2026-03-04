@@ -1,5 +1,6 @@
 package tokenizer
 
+import rexp.CFUN
 import rexp.CHAR
 import rexp.P
 import rexp.RegularExpression
@@ -87,6 +88,13 @@ object SMLLexerSpec {
     private val newline: RegularExpression = "NL" T (CHAR('\n') X "\\r\\n").P()
 
     /**
+     * Catch-all rule for any character not matched by the rules above.
+     * This prevents the lexer from crashing on unexpected bytes (e.g. from fuzz testing).
+     * Due to POSIX rule priority, this only matches characters that no other rule handles.
+     */
+    private val error: RegularExpression = "ERROR" T CFUN("ANY") { true }
+
+    /**
      * The complete SML lexer specification as a single regular expression.
      *
      * Pattern priority (left-to-right in alternation):
@@ -95,8 +103,9 @@ object SMLLexerSpec {
      * 3. Literals (more specific patterns first)
      * 4. Identifiers (type variables before alphanumeric)
      * 5. Whitespace
+     * 6. Error (catch-all for unrecognised characters)
      */
-    val singleToken = reservedWords X punctuation X literals X identifiers X whitespace X newline
+    val singleToken = reservedWords X punctuation X literals X identifiers X whitespace X newline X error
 
     /**
      * Lexer for a complete SML program

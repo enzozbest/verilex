@@ -342,34 +342,27 @@ class SMLTokeniserTest {
     }
 
     @Test
-    fun testTokenisationError() {
-        // Backtick is part of symbolic identifiers, so we need a truly invalid character
-        // Control characters or special unicode should trigger errors
-        val exception =
-            assertThrows(TokenisationError::class.java) {
-                SMLTokeniser.tokenise("hello\u0000world")
-            }
-
-        assertTrue(exception.position >= 0)
-        assertTrue(exception.context.isNotEmpty())
+    fun testUnexpectedCharacterProducesErrorToken() {
+        // Control characters are not part of any SML token rule,
+        // so the catch-all produces ERROR tokens instead of crashing
+        val result = SMLTokeniser.tokenise("hello\u0000world")
+        val errorTokens = result.filter { it.type == SMLTokenType.Error.ERROR }
+        assertEquals(1, errorTokens.size)
+        assertEquals("\u0000", errorTokens[0].lexeme)
     }
 
     @Test
-    fun testTokenisationErrorAtStart() {
-        val exception =
-            assertThrows(TokenisationError::class.java) {
-                SMLTokeniser.tokenise("\u0000")
-            }
-        assertTrue(exception.position >= 0)
+    fun testUnexpectedCharacterAtStart() {
+        val result = SMLTokeniser.tokenise("\u0000")
+        assertEquals(1, result.size)
+        assertEquals(SMLTokenType.Error.ERROR, result[0].type)
     }
 
     @Test
-    fun testTokenisationErrorContext() {
-        val exception =
-            assertThrows(TokenisationError::class.java) {
-                SMLTokeniser.tokenise("valid\u0000invalid")
-            }
-        assertTrue(exception.context.isNotEmpty())
+    fun testUnexpectedCharacterInMiddle() {
+        val result = SMLTokeniser.tokenise("valid\u0000invalid")
+        val errorTokens = result.filter { it.type == SMLTokenType.Error.ERROR }
+        assertEquals(1, errorTokens.size)
     }
 
     @Test
@@ -640,13 +633,11 @@ class SMLTokeniserTest {
     }
 
     @Test
-    fun testContextExtractionWithLongString() {
+    fun testLongStringWithUnexpectedCharacter() {
         val longString = "fun factorial n = if n = 0 thn\u0000 1 else n * factorial (n - 1)"
-        val exception =
-            assertThrows(TokenisationError::class.java) {
-                SMLTokeniser.tokenise(longString)
-            }
-        val expected = "...n = 0 thn\u0000 1 else n ..."
-        assertEquals(expected, exception.context)
+        val result = SMLTokeniser.tokenise(longString)
+        val errorTokens = result.filter { it.type == SMLTokenType.Error.ERROR }
+        assertEquals(1, errorTokens.size)
+        assertEquals("\u0000", errorTokens[0].lexeme)
     }
 }

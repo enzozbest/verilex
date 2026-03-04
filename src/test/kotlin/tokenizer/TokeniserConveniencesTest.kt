@@ -20,10 +20,10 @@ class TokeniserConveniencesTest {
     }
 
     @Test
-    fun testTokenizeSMLError() {
-        assertThrows(TokenisationError::class.java) {
-            "\u0000invalid".tokenizeSML()
-        }
+    fun testTokenizeSMLWithUnexpectedChar() {
+        val result = "\u0000invalid".tokenizeSML()
+        assertTrue(result.isNotEmpty())
+        assertEquals(SMLTokenType.Error.ERROR, result[0].type)
     }
 
     @Test
@@ -41,9 +41,10 @@ class TokeniserConveniencesTest {
     }
 
     @Test
-    fun testTokenizeSMLOrNullError() {
+    fun testTokenizeSMLOrNullWithUnexpectedChar() {
         val result = "\u0000invalid".tokenizeSMLOrNull()
-        assertNull(result)
+        assertNotNull(result)
+        assertEquals(SMLTokenType.Error.ERROR, result!![0].type)
     }
 
     @Test

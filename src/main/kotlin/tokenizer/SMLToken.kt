@@ -17,6 +17,7 @@ sealed interface SMLTokenType {
                 Literal.entries.forEach { put(it.displayName, it) }
                 Identifier.entries.forEach { put(it.displayName, it) }
                 Trivia.entries.forEach { put(it.displayName, it) }
+                Error.entries.forEach { put(it.displayName, it) }
             }
         }
 
@@ -118,6 +119,13 @@ sealed interface SMLTokenType {
         WHITESPACE("WS"),
         NEWLINE("NL"),
         COMMENT("C"),
+    }
+
+    /** Error tokens for characters not recognised by any other rule */
+    enum class Error(
+        override val displayName: String,
+    ) : SMLTokenType {
+        ERROR("ERROR"),
     }
 }
 
