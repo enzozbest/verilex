@@ -55,7 +55,7 @@ object SMLReservedWords {
     val colon = CHAR(':')
     val semicolon = CHAR(';')
     val ellipsis = "...".toRegex()
-    val ws = (" " X "\t" X "\r")
+    val ws = (" " X "\t" X "\r" X "\u000C")
     val underbar = CHAR('_')
     val pipe = CHAR('|')
     val equals = CHAR('=')

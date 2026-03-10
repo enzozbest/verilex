@@ -70,7 +70,7 @@ abstract class Tokeniser<T> {
         return try {
             Verilex.lex(SMLLexerSpec.lexer, source)
             true
-        } catch (_: IllegalStateException) {
+        } catch (_: Exception) {
             false
         }
     }

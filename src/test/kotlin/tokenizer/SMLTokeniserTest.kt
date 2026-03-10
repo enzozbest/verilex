@@ -640,4 +640,82 @@ class SMLTokeniserTest {
         assertEquals(1, errorTokens.size)
         assertEquals("\u0000", errorTokens[0].lexeme)
     }
+
+    @Test
+    fun testRecoveryLoneDoubleQuote() {
+        val result = SMLTokeniser.tokenise("\"")
+        assertEquals(1, result.size)
+        assertEquals(SMLTokenType.Error.ERROR, result[0].type)
+        assertEquals("\"", result[0].lexeme)
+    }
+
+    @Test
+    fun testRecoveryLoneSingleQuote() {
+        val result = SMLTokeniser.tokenise("'")
+        assertEquals(1, result.size)
+        assertEquals(SMLTokenType.Error.ERROR, result[0].type)
+        assertEquals("'", result[0].lexeme)
+    }
+
+    @Test
+    fun testRecoveryLoneDot() {
+        val result = SMLTokeniser.tokenise(".")
+        assertEquals(1, result.size)
+        assertEquals(SMLTokenType.Error.ERROR, result[0].type)
+        assertEquals(".", result[0].lexeme)
+    }
+
+    @Test
+    fun testRecoveryPreservesValidPrefix() {
+        val result = SMLTokeniser.tokenise("abc\"")
+        val withoutTrivia = result.withoutTrivia()
+        assertEquals(2, withoutTrivia.size)
+        assertEquals(SMLTokenType.Identifier.IDENTIFIER, withoutTrivia[0].type)
+        assertEquals("abc", withoutTrivia[0].lexeme)
+        assertEquals(SMLTokenType.Error.ERROR, withoutTrivia[1].type)
+        assertEquals("\"", withoutTrivia[1].lexeme)
+    }
+
+    @Test
+    fun testRecoveryPreservesValidSuffix() {
+        val result = SMLTokeniser.tokenise("\"abc")
+        val withoutTrivia = result.withoutTrivia()
+        assertEquals(2, withoutTrivia.size)
+        assertEquals(SMLTokenType.Error.ERROR, withoutTrivia[0].type)
+        assertEquals("\"", withoutTrivia[0].lexeme)
+        assertEquals(SMLTokenType.Identifier.IDENTIFIER, withoutTrivia[1].type)
+        assertEquals("abc", withoutTrivia[1].lexeme)
+    }
+
+    @Test
+    fun testRecoveryDoesNotAffectValidStrings() {
+        val result = SMLTokeniser.tokenise("\"hello\"")
+        assertEquals(1, result.size)
+        assertEquals(SMLTokenType.Literal.STRING, result[0].type)
+    }
+
+    @Test
+    fun testRecoveryDotAfterIdentifier() {
+        val result = SMLTokeniser.tokenise("abc.")
+        val withoutTrivia = result.withoutTrivia()
+        assertEquals(2, withoutTrivia.size)
+        assertEquals(SMLTokenType.Identifier.IDENTIFIER, withoutTrivia[0].type)
+        assertEquals(SMLTokenType.Error.ERROR, withoutTrivia[1].type)
+    }
+
+    @Test
+    fun testRecoveryMultipleGapCharacters() {
+        val result = SMLTokeniser.tokenise("\"'.")
+        assertEquals(3, result.size)
+        assertTrue(result.all { it.type == SMLTokenType.Error.ERROR })
+    }
+
+    @Test
+    fun testRecoveryQualifiedIdStillWorks() {
+        val result = SMLTokeniser.tokenise("Foo.bar")
+        val withoutTrivia = result.withoutTrivia()
+        assertEquals(1, withoutTrivia.size)
+        assertEquals(SMLTokenType.Identifier.IDENTIFIER, withoutTrivia[0].type)
+        assertEquals("Foo.bar", withoutTrivia[0].lexeme)
+    }
 }
