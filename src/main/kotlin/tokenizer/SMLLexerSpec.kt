@@ -69,8 +69,7 @@ object SMLLexerSpec {
             ("_" T SMLReservedWords.underbar) X
             ("|" T SMLReservedWords.pipe) X
             ("=" T SMLReservedWords.equals) X
-            ("#" T SMLReservedWords.hash) X
-            ("*" T SMLTokenHelpers.asterisk)
+            ("#" T SMLReservedWords.hash)
 
     private val literals =
             ("WORD" T (SMLConstants.decimalWord X SMLConstants.hexWord)) X

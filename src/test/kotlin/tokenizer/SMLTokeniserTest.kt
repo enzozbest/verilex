@@ -651,9 +651,11 @@ class SMLTokeniserTest {
 
     @Test
     fun testRecoveryLoneSingleQuote() {
+        // Per the Definition §2.5, a bare prime is a valid alphanumeric identifier
+        // (and therefore a TyVar, since it starts with a prime).
         val result = SMLTokeniser.tokenise("'")
         assertEquals(1, result.size)
-        assertEquals(SMLTokenType.Error.ERROR, result[0].type)
+        assertEquals(SMLTokenType.Identifier.TYPE_IDENTIFIER, result[0].type)
         assertEquals("'", result[0].lexeme)
     }
 
@@ -705,9 +707,16 @@ class SMLTokeniserTest {
 
     @Test
     fun testRecoveryMultipleGapCharacters() {
+        // '"'. = ERROR(") + TYVAR(') + ERROR(.)
+        // Bare ' is now a valid TyVar per the Definition §2.5.
         val result = SMLTokeniser.tokenise("\"'.")
         assertEquals(3, result.size)
-        assertTrue(result.all { it.type == SMLTokenType.Error.ERROR })
+        assertEquals(SMLTokenType.Error.ERROR, result[0].type)
+        assertEquals("\"", result[0].lexeme)
+        assertEquals(SMLTokenType.Identifier.TYPE_IDENTIFIER, result[1].type)
+        assertEquals("'", result[1].lexeme)
+        assertEquals(SMLTokenType.Error.ERROR, result[2].type)
+        assertEquals(".", result[2].lexeme)
     }
 
     @Test

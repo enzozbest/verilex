@@ -116,24 +116,35 @@ object SMLIdentifiers {
      */
     val alphanumericId = letter F alphanumeric.S()
 
-    /**
-     * Qualified identifier: chain of alphanumeric identifiers separated by '.'.
-     */
-    val qualifiedId = alphanumericId F ("." F alphanumericId).P()
-
     /** Symbolic identifier: one or more symbolic characters */
     val symbolicId = symbolic.P()
 
     /** Any identifier (alphanumeric or symbolic) */
     val identifier = alphanumericId X symbolicId
 
-    /** Type variable (TyVar): alphanumeric identifier starting with a prime
+    /**
+     * Qualified identifier: one or more structure identifiers (alphanumeric) separated by '.',
+     * followed by a final component that may be alphanumeric or symbolic.
      *
-     * Note: this version is NOT in accordance with the Definition of SML. Strictly speaking, identifiers starting
-     * with '' are of the class Equality Type Variable (EtyVar). However, PolyML does not differentiate between them,
-     * and we will allow that as a trivial deviation. We do not want to reject inputs on that basis.
+     * Definition §2.4: longx ::= strid1.···.stridn.x (n ≥ 1) where strid is always alphanumeric
+     * but the final component x can be any identifier (alphanumeric or symbolic) for VId.
      */
-    val tyvar = prime F ((ONE X prime) F alphanumericId)
+    val qualifiedId = alphanumericId F ("." F alphanumericId).S() F "." F identifier
+
+    /** Type variable (TyVar): alphanumeric identifier starting with a prime.
+     *
+     * Definition §2.5: "A type variable tyvar may be any alphanumeric identifier starting with a prime;
+     * the subclass EtyVar of TyVar, the equality type variables, consists of those which start with
+     * two or more primes."
+     *
+     * An alphanumeric identifier is "any sequence of letters, digits, primes and underbars starting
+     * with a letter or prime." So after the initial prime, any alphanumeric characters (including
+     * more primes, digits, underbars) are valid. Examples: 'a, '1, ''a, ''1, '''abc.
+     *
+     * Note: PolyML does not differentiate between TyVar and EtyVar, and we allow that as a trivial
+     * deviation. We do not want to reject inputs on that basis.
+     */
+    val tyvar = prime F alphanumeric.S()
 
     /** Numeric label: any numeral not starting with 0 (for record labels) */
     private val nonZeroDigit = RANGE(('1'..'9').toSet())
