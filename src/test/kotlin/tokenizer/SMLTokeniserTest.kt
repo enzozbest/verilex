@@ -640,4 +640,91 @@ class SMLTokeniserTest {
         assertEquals(1, errorTokens.size)
         assertEquals("\u0000", errorTokens[0].lexeme)
     }
+
+    @Test
+    fun testRecoveryLoneDoubleQuote() {
+        val result = SMLTokeniser.tokenise("\"")
+        assertEquals(1, result.size)
+        assertEquals(SMLTokenType.Error.ERROR, result[0].type)
+        assertEquals("\"", result[0].lexeme)
+    }
+
+    @Test
+    fun testRecoveryLoneSingleQuote() {
+        // Per the Definition §2.5, a bare prime is a valid alphanumeric identifier
+        // (and therefore a TyVar, since it starts with a prime).
+        val result = SMLTokeniser.tokenise("'")
+        assertEquals(1, result.size)
+        assertEquals(SMLTokenType.Identifier.TYPE_IDENTIFIER, result[0].type)
+        assertEquals("'", result[0].lexeme)
+    }
+
+    @Test
+    fun testRecoveryLoneDot() {
+        val result = SMLTokeniser.tokenise(".")
+        assertEquals(1, result.size)
+        assertEquals(SMLTokenType.Error.ERROR, result[0].type)
+        assertEquals(".", result[0].lexeme)
+    }
+
+    @Test
+    fun testRecoveryPreservesValidPrefix() {
+        val result = SMLTokeniser.tokenise("abc\"")
+        val withoutTrivia = result.withoutTrivia()
+        assertEquals(2, withoutTrivia.size)
+        assertEquals(SMLTokenType.Identifier.IDENTIFIER, withoutTrivia[0].type)
+        assertEquals("abc", withoutTrivia[0].lexeme)
+        assertEquals(SMLTokenType.Error.ERROR, withoutTrivia[1].type)
+        assertEquals("\"", withoutTrivia[1].lexeme)
+    }
+
+    @Test
+    fun testRecoveryPreservesValidSuffix() {
+        val result = SMLTokeniser.tokenise("\"abc")
+        val withoutTrivia = result.withoutTrivia()
+        assertEquals(2, withoutTrivia.size)
+        assertEquals(SMLTokenType.Error.ERROR, withoutTrivia[0].type)
+        assertEquals("\"", withoutTrivia[0].lexeme)
+        assertEquals(SMLTokenType.Identifier.IDENTIFIER, withoutTrivia[1].type)
+        assertEquals("abc", withoutTrivia[1].lexeme)
+    }
+
+    @Test
+    fun testRecoveryDoesNotAffectValidStrings() {
+        val result = SMLTokeniser.tokenise("\"hello\"")
+        assertEquals(1, result.size)
+        assertEquals(SMLTokenType.Literal.STRING, result[0].type)
+    }
+
+    @Test
+    fun testRecoveryDotAfterIdentifier() {
+        val result = SMLTokeniser.tokenise("abc.")
+        val withoutTrivia = result.withoutTrivia()
+        assertEquals(2, withoutTrivia.size)
+        assertEquals(SMLTokenType.Identifier.IDENTIFIER, withoutTrivia[0].type)
+        assertEquals(SMLTokenType.Error.ERROR, withoutTrivia[1].type)
+    }
+
+    @Test
+    fun testRecoveryMultipleGapCharacters() {
+        // '"'. = ERROR(") + TYVAR(') + ERROR(.)
+        // Bare ' is now a valid TyVar per the Definition §2.5.
+        val result = SMLTokeniser.tokenise("\"'.")
+        assertEquals(3, result.size)
+        assertEquals(SMLTokenType.Error.ERROR, result[0].type)
+        assertEquals("\"", result[0].lexeme)
+        assertEquals(SMLTokenType.Identifier.TYPE_IDENTIFIER, result[1].type)
+        assertEquals("'", result[1].lexeme)
+        assertEquals(SMLTokenType.Error.ERROR, result[2].type)
+        assertEquals(".", result[2].lexeme)
+    }
+
+    @Test
+    fun testRecoveryQualifiedIdStillWorks() {
+        val result = SMLTokeniser.tokenise("Foo.bar")
+        val withoutTrivia = result.withoutTrivia()
+        assertEquals(1, withoutTrivia.size)
+        assertEquals(SMLTokenType.Identifier.IDENTIFIER, withoutTrivia[0].type)
+        assertEquals("Foo.bar", withoutTrivia[0].lexeme)
+    }
 }

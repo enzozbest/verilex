@@ -69,8 +69,7 @@ object SMLLexerSpec {
             ("_" T SMLReservedWords.underbar) X
             ("|" T SMLReservedWords.pipe) X
             ("=" T SMLReservedWords.equals) X
-            ("#" T SMLReservedWords.hash) X
-            ("*" T SMLTokenHelpers.asterisk)
+            ("#" T SMLReservedWords.hash)
 
     private val literals =
             ("WORD" T (SMLConstants.decimalWord X SMLConstants.hexWord)) X
@@ -88,11 +87,15 @@ object SMLLexerSpec {
     private val newline: RegularExpression = "NL" T (CHAR('\n') X "\\r\\n").P()
 
     /**
-     * Catch-all rule for any character not matched by the rules above.
-     * This prevents the lexer from crashing on unexpected bytes (e.g. from fuzz testing).
-     * Due to POSIX rule priority, this only matches characters that no other rule handles.
+     * Catch-all rule for characters that no other rule handles.
+     * Covers ASCII control characters (0x00–0x08, 0x0B, 0x0E–0x1F, 0x7F)
+     * and all characters ≥ 128 (non-ASCII bytes that are not valid SML identifier characters).
+     * Tab (0x09), LF (0x0A), FF (0x0C), and CR (0x0D) are handled by whitespace/newline rules.
      */
-    private val error: RegularExpression = "ERROR" T CFUN("ANY") { true }
+    private val error: RegularExpression = "ERROR" T CFUN("ERROR") { c ->
+        val code = c.code
+        code in 0..8 || code == 11 || code in 14..31 || code >= 127
+    }
 
     /**
      * The complete SML lexer specification as a single regular expression.
