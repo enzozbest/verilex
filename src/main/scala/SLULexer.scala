@@ -1,3 +1,4 @@
+package verified
 /**
  * AUTO-GENERATED FILE — DO NOT MODIFY
  *
