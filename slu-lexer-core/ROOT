@@ -1,0 +1,3 @@
+session SLU_Refimpl = "Posix-Lexing" +
+  theories
+    slu_refimpl
