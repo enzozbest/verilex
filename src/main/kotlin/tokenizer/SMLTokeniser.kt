@@ -1,5 +1,6 @@
 package tokenizer
 
+import formallex.FormalLexer
 import lexer.Verilex
 
 /**
@@ -21,7 +22,8 @@ object SMLTokeniser : Tokeniser<TokenSequence>() {
         if (source.isEmpty()) return TokenSequence(emptyList())
 
         return try {
-            val rawTokens = Verilex.lex(SMLLexerSpec.lexer, source)
+            //val rawTokens = Verilex.lex(SMLLexerSpec.lexer, source)   //FALLBACK IN CASE verifiedLex does not work!
+            val rawTokens = FormalLexer.verifiedLex(SMLLexerSpec.lexer, source)?.env() ?: error("Verified Lexer failed to produce a result")
             TokenSequence(buildTokenList(rawTokens))
         } catch (_: Exception) {
             tokeniseWithRecovery(source)
