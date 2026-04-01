@@ -1,8 +1,8 @@
 package tokenizer
 
-import rexp.CFUN
 import rexp.CHAR
 import rexp.P
+import rexp.RANGE
 import rexp.RegularExpression
 import rexp.S
 import rexp.T
@@ -92,10 +92,14 @@ object SMLLexerSpec {
      * and all characters ≥ 128 (non-ASCII bytes that are not valid SML identifier characters).
      * Tab (0x09), LF (0x0A), FF (0x0C), and CR (0x0D) are handled by whitespace/newline rules.
      */
-    private val error: RegularExpression = "ERROR" T CFUN("ERROR") { c ->
-        val code = c.code
-        code in 0..8 || code == 11 || code in 14..31 || code >= 127
+    private val errorChars: Set<Char> = buildSet {
+        for (code in 0..8) add(code.toChar())
+        add(11.toChar())
+        for (code in 14..31) add(code.toChar())
+        for (code in 127..255) add(code.toChar())
     }
+
+    private val error: RegularExpression = "ERROR" T RANGE(errorChars)
 
     /**
      * The complete SML lexer specification as a single regular expression.
@@ -113,5 +117,6 @@ object SMLLexerSpec {
     /**
      * Lexer for a complete SML program
      */
-    val lexer = singleToken.S().toCharFunctionFormat()
+    val lexer = singleToken.S()
+
 }

@@ -2,6 +2,7 @@ package tokenizer
 
 import formallex.FormalLexer
 import lexer.Verilex
+import rexp.RegularExpression
 
 /**
  * Tokeniser for Standard ML source code.
@@ -18,14 +19,20 @@ import lexer.Verilex
  * and cause Brzozowski derivative explosion, so recovery must happen here instead.
  */
 object SMLTokeniser : Tokeniser<TokenSequence>() {
+    private fun obtainRawTokens(r: RegularExpression, source: String) = FormalLexer.verifiedLex(r, source)?.env().also { println("Attempting formal lexer...") }
+        ?: Verilex.lex(r.toCharFunctionFormat(), source).also{
+            print("Verified Lexer failed to produce a result! Falling back to Verilex's built-in lexer for this input.")
+        }
+
     override fun tokenise(source: String): TokenSequence {
         if (source.isEmpty()) return TokenSequence(emptyList())
 
         return try {
-            //val rawTokens = Verilex.lex(SMLLexerSpec.lexer, source)   //FALLBACK IN CASE verifiedLex does not work!
-            val rawTokens = FormalLexer.verifiedLex(SMLLexerSpec.lexer, source)?.env() ?: error("Verified Lexer failed to produce a result")
+            val rawTokens = obtainRawTokens(SMLLexerSpec.lexer, source)
             TokenSequence(buildTokenList(rawTokens))
-        } catch (_: Exception) {
+        } catch (e: Exception) {
+            print(e.message + " " + e.cause + " " + e.stackTraceToString())
+            print("Some error occurred during lexing! Falling back to tokenisation with recovery for this input.")
             tokeniseWithRecovery(source)
         }
     }
@@ -41,7 +48,7 @@ object SMLTokeniser : Tokeniser<TokenSequence>() {
             val remaining = source.substring(pos)
 
             try {
-                val rawTokens = Verilex.lex(SMLLexerSpec.lexer, remaining)
+                val rawTokens = obtainRawTokens(SMLLexerSpec.lexer, remaining)
                 var localPos = pos
                 for ((tag, lexeme) in rawTokens) {
                     tokens.add(Token.fromPair(tag to lexeme, localPos))
@@ -52,7 +59,7 @@ object SMLTokeniser : Tokeniser<TokenSequence>() {
                 val validLen = findValidPrefixLength(remaining)
 
                 if (validLen > 0) {
-                    val prefixTokens = Verilex.lex(SMLLexerSpec.lexer, remaining.substring(0, validLen))
+                    val prefixTokens = obtainRawTokens(SMLLexerSpec.lexer, remaining.substring(0, validLen))
                     var localPos = pos
                     for ((tag, lexeme) in prefixTokens) {
                         tokens.add(Token.fromPair(tag to lexeme, localPos))
