@@ -92,6 +92,7 @@ class SMLRegexesTest {
     @Test
     fun testTokenHelperPatterns() {
         assertNotNull(SMLTokenHelpers.optionalSign)
+        assertNotNull(SMLTokenHelpers.asterisk)
         assertNotNull(SMLTokenHelpers.decimalDigit)
         assertNotNull(SMLTokenHelpers.hexDigit)
         assertNotNull(SMLTokenHelpers.exponent)
@@ -99,6 +100,12 @@ class SMLRegexesTest {
         assertNotNull(SMLTokenHelpers.realFraction)
         assertNotNull(SMLTokenHelpers.realExponent)
         assertNotNull(SMLTokenHelpers.realFull)
+    }
+
+    @Test
+    fun testAsteriskIsCHAR() {
+        assertTrue(SMLTokenHelpers.asterisk is CHAR)
+        assertEquals(CHAR('*'), SMLTokenHelpers.asterisk)
     }
 
     @Test

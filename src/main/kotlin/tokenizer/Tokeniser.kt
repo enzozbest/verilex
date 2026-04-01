@@ -68,7 +68,7 @@ abstract class Tokeniser<T> {
     protected fun canTokenise(source: String): Boolean {
         if (source.isEmpty()) return true
         return try {
-            Verilex.lex(SMLLexerSpec.lexer, source)
+            Verilex.lex(SMLLexerSpec.lexer.toCharFunctionFormat(), source)
             true
         } catch (_: Exception) {
             false

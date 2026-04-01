@@ -204,6 +204,7 @@ object KotlinScalaConverter {
      * This is safe as long as the value was produced by a lexer instantiated at `SLULexer.char`,
      * which is always the case when called through [FormalLexer.verifiedLex].
      */
+    @util.Generated //Needed for accurate coverage: else branch is dead, but Kotlin cannot see that.
     @Suppress("UNCHECKED_CAST")
     fun SLULexer.vala<SLULexer.char>.toKotlinValue(): Value = when (this) {
         is SLULexer.Void -> Empty

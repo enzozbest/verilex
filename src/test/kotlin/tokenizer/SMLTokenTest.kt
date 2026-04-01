@@ -221,5 +221,60 @@ class SMLTokenTest {
         assertEquals("INT", SMLTokenType.Literal.INTEGER.displayName)
         assertEquals("ID", SMLTokenType.Identifier.IDENTIFIER.displayName)
         assertEquals("WS", SMLTokenType.Trivia.WHITESPACE.displayName)
+        assertEquals("ERROR", SMLTokenType.Error.ERROR.displayName)
+        assertEquals("*", SMLTokenType.Punctuation.ASTERISK.displayName)
+        assertEquals("NL", SMLTokenType.Trivia.NEWLINE.displayName)
+        assertEquals("C", SMLTokenType.Trivia.COMMENT.displayName)
+    }
+
+    @Test
+    fun testSMLTokenTypeFromTagError() {
+        assertEquals(SMLTokenType.Error.ERROR, SMLTokenType.fromTag("ERROR"))
+    }
+
+    @Test
+    fun testSMLTokenTypeFromTagAsterisk() {
+        assertEquals(SMLTokenType.Punctuation.ASTERISK, SMLTokenType.fromTag("*"))
+    }
+
+    @Test
+    fun testTokenToCompactStringError() {
+        val errorToken = Token(SMLTokenType.Error.ERROR, "\u0000", 0)
+        assertEquals("ERROR", errorToken.toCompactString())
+    }
+
+    @Test
+    fun testTokenToCompactStringNumericLabel() {
+        val labelToken = Token(SMLTokenType.Identifier.NUMERIC_LABEL, "3", 0)
+        assertEquals("numeric_label(3)", labelToken.toCompactString())
+    }
+
+    @Test
+    fun testTokenToCompactStringTrivia() {
+        val nlToken = Token(SMLTokenType.Trivia.NEWLINE, "\n", 0)
+        assertEquals("NL", nlToken.toCompactString())
+    }
+
+    @Test
+    fun testTokenSequenceEmpty() {
+        val seq = TokenSequence(emptyList())
+        assertTrue(seq.isEmpty())
+        assertEquals("", seq.toCompactString())
+        assertEquals("", seq.toDetailedString())
+        assertEquals(0, seq.withoutTrivia().size)
+    }
+
+    @Test
+    fun testTokenSequenceWithCommentTrivia() {
+        val tokens = listOf(
+            Token(SMLTokenType.ReservedWord.IF, "if", 0),
+            Token(SMLTokenType.Trivia.COMMENT, "(* comment *)", 2),
+            Token(SMLTokenType.ReservedWord.THEN, "then", 15)
+        )
+        val seq = TokenSequence(tokens)
+        val withoutTrivia = seq.withoutTrivia()
+        assertEquals(2, withoutTrivia.size)
+        assertEquals(SMLTokenType.ReservedWord.IF, withoutTrivia[0].type)
+        assertEquals(SMLTokenType.ReservedWord.THEN, withoutTrivia[1].type)
     }
 }

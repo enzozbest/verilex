@@ -20,7 +20,7 @@ class SMLLexerSpecTest {
 
     @Test
     fun testLexerMatchesSingleToken() {
-        val result = Verilex.lex(SMLLexerSpec.lexer, "if")
+        val result = Verilex.lex(SMLLexerSpec.lexer.toCharFunctionFormat(), "if")
         assertTrue(result.isNotEmpty())
         assertEquals("IF", result[0].first)
     }
@@ -63,7 +63,7 @@ class SMLLexerSpecTest {
         )
 
         for ((lexeme, tag) in keywords) {
-            val result = Verilex.lex(SMLLexerSpec.lexer, lexeme)
+            val result = Verilex.lex(SMLLexerSpec.lexer.toCharFunctionFormat(), lexeme)
             assertEquals(1, result.size, "Expected 1 token for '$lexeme'")
             assertEquals(tag, result[0].first, "Expected tag '$tag' for lexeme '$lexeme'")
         }
@@ -91,7 +91,7 @@ class SMLLexerSpecTest {
         )
 
         for ((lexeme, tag) in punctuation) {
-            val result = Verilex.lex(SMLLexerSpec.lexer, lexeme)
+            val result = Verilex.lex(SMLLexerSpec.lexer.toCharFunctionFormat(), lexeme)
             assertEquals(1, result.size, "Expected 1 token for '$lexeme'")
             assertEquals(tag, result[0].first, "Expected tag '$tag' for lexeme '$lexeme'")
         }
@@ -112,7 +112,7 @@ class SMLLexerSpecTest {
         )
 
         for ((lexeme, tag) in literals) {
-            val result = Verilex.lex(SMLLexerSpec.lexer, lexeme)
+            val result = Verilex.lex(SMLLexerSpec.lexer.toCharFunctionFormat(), lexeme)
             assertEquals(1, result.size, "Expected 1 token for '$lexeme'")
             assertEquals(tag, result[0].first, "Expected tag '$tag' for lexeme '$lexeme'")
         }
@@ -120,45 +120,45 @@ class SMLLexerSpecTest {
 
     @Test
     fun testLexerMatchesIdentifiers() {
-        val result1 = Verilex.lex(SMLLexerSpec.lexer, "myVar")
+        val result1 = Verilex.lex(SMLLexerSpec.lexer.toCharFunctionFormat(), "myVar")
         assertEquals("ID", result1[0].first)
 
-        val result2 = Verilex.lex(SMLLexerSpec.lexer, "++")
+        val result2 = Verilex.lex(SMLLexerSpec.lexer.toCharFunctionFormat(), "++")
         assertEquals("ID", result2[0].first)
     }
 
     @Test
     fun testLexerMatchesTypeVariables() {
-        val result = Verilex.lex(SMLLexerSpec.lexer, "'a")
+        val result = Verilex.lex(SMLLexerSpec.lexer.toCharFunctionFormat(), "'a")
         assertTrue(result[0].first == "TYVAR" || result[0].first == "ETYVAR")
     }
 
     @Test
     fun testLexerMatchesEqualityTypeVariables() {
-        val result = Verilex.lex(SMLLexerSpec.lexer, "''a")
+        val result = Verilex.lex(SMLLexerSpec.lexer.toCharFunctionFormat(), "''a")
         assertTrue(result[0].first == "TYVAR")
     }
 
     @Test
     fun testLexerMatchesWhitespace() {
-        val result = Verilex.lex(SMLLexerSpec.lexer, "   ")
+        val result = Verilex.lex(SMLLexerSpec.lexer.toCharFunctionFormat(), "   ")
         assertEquals(1, result.size)
         assertEquals("WS", result[0].first)
     }
 
     @Test
     fun testLexerMatchesNewlines() {
-        val result1 = Verilex.lex(SMLLexerSpec.lexer, "\n")
+        val result1 = Verilex.lex(SMLLexerSpec.lexer.toCharFunctionFormat(), "\n")
         assertEquals("NL", result1[0].first)
 
         // The source uses "\\r\\n" which is literal backslash chars, not CRLF
-        val result2 = Verilex.lex(SMLLexerSpec.lexer, "\\r\\n")
+        val result2 = Verilex.lex(SMLLexerSpec.lexer.toCharFunctionFormat(), "\\r\\n")
         assertEquals("NL", result2[0].first)
     }
 
     @Test
     fun testLexerMatchesMultipleTokens() {
-        val result = Verilex.lex(SMLLexerSpec.lexer, "if x then y")
+        val result = Verilex.lex(SMLLexerSpec.lexer.toCharFunctionFormat(), "if x then y")
         assertEquals(7, result.size)
         assertEquals("IF", result[0].first)
         assertEquals("WS", result[1].first)
@@ -169,13 +169,13 @@ class SMLLexerSpecTest {
 
     @Test
     fun testLexerPriorityReservedOverId() {
-        val result = Verilex.lex(SMLLexerSpec.lexer, "if")
+        val result = Verilex.lex(SMLLexerSpec.lexer.toCharFunctionFormat(), "if")
         assertEquals("IF", result[0].first)
     }
 
     @Test
     fun testLexerPriorityLongerMatch() {
-        val result = Verilex.lex(SMLLexerSpec.lexer, "=>")
+        val result = Verilex.lex(SMLLexerSpec.lexer.toCharFunctionFormat(), "=>")
         assertEquals(1, result.size)
         assertEquals("=>", result[0].first)
     }
@@ -188,19 +188,61 @@ class SMLLexerSpecTest {
 
     @Test
     fun testLexerWithNumericLabel() {
-        val result = Verilex.lex(SMLLexerSpec.lexer, "123")
+        val result = Verilex.lex(SMLLexerSpec.lexer.toCharFunctionFormat(), "123")
         assertTrue(result.isNotEmpty())
     }
 
     @Test
     fun testLexerWithTab() {
-        val result = Verilex.lex(SMLLexerSpec.lexer, "\t")
+        val result = Verilex.lex(SMLLexerSpec.lexer.toCharFunctionFormat(), "\t")
         assertEquals("WS", result[0].first)
     }
 
     @Test
     fun testLexerWithCarriageReturn() {
-        val result = Verilex.lex(SMLLexerSpec.lexer, "\r")
+        val result = Verilex.lex(SMLLexerSpec.lexer.toCharFunctionFormat(), "\r")
         assertEquals("WS", result[0].first)
+    }
+
+    @Test
+    fun testLexerMatchesErrorCharacters() {
+        // Control characters should be matched by the ERROR rule
+        val result1 = Verilex.lex(SMLLexerSpec.lexer.toCharFunctionFormat(), "\u0000")
+        assertEquals(1, result1.size)
+        assertEquals("ERROR", result1[0].first)
+
+        val result2 = Verilex.lex(SMLLexerSpec.lexer.toCharFunctionFormat(), "\u0001")
+        assertEquals("ERROR", result2[0].first)
+
+        val result3 = Verilex.lex(SMLLexerSpec.lexer.toCharFunctionFormat(), "\u007F") // DEL
+        assertEquals("ERROR", result3[0].first)
+    }
+
+    @Test
+    fun testLexerErrorCharsDoNotIncludeValidWhitespace() {
+        // Tab, LF, FF, CR should NOT be error chars
+        val tab = Verilex.lex(SMLLexerSpec.lexer.toCharFunctionFormat(), "\t")
+        assertNotEquals("ERROR", tab[0].first)
+
+        val lf = Verilex.lex(SMLLexerSpec.lexer.toCharFunctionFormat(), "\n")
+        assertNotEquals("ERROR", lf[0].first)
+
+        val cr = Verilex.lex(SMLLexerSpec.lexer.toCharFunctionFormat(), "\r")
+        assertNotEquals("ERROR", cr[0].first)
+    }
+
+    @Test
+    fun testLexerMatchesQualifiedId() {
+        val result = Verilex.lex(SMLLexerSpec.lexer.toCharFunctionFormat(), "Foo.bar")
+        assertEquals(1, result.size)
+        assertEquals("ID", result[0].first)
+        assertEquals("Foo.bar", result[0].second)
+    }
+
+    @Test
+    fun testLexerSingleTokenHasNoStar() {
+        val result = Verilex.lex(SMLLexerSpec.singleToken.toCharFunctionFormat(), "if")
+        assertEquals(1, result.size)
+        assertEquals("IF", result[0].first)
     }
 }

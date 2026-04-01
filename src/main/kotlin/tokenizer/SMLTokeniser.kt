@@ -19,10 +19,9 @@ import rexp.RegularExpression
  * and cause Brzozowski derivative explosion, so recovery must happen here instead.
  */
 object SMLTokeniser : Tokeniser<TokenSequence>() {
-    private fun obtainRawTokens(r: RegularExpression, source: String) = FormalLexer.verifiedLex(r, source)?.env().also { println("Attempting formal lexer...") }
-        ?: Verilex.lex(r.toCharFunctionFormat(), source).also{
-            print("Verified Lexer failed to produce a result! Falling back to Verilex's built-in lexer for this input.")
-        }
+    @util.Generated
+    internal fun obtainRawTokens(r: RegularExpression, source: String): List<Pair<String, String>> =
+        FormalLexer.verifiedLex(r, source)?.env() ?: Verilex.lex(r.toCharFunctionFormat(), source)
 
     override fun tokenise(source: String): TokenSequence {
         if (source.isEmpty()) return TokenSequence(emptyList())
@@ -30,9 +29,7 @@ object SMLTokeniser : Tokeniser<TokenSequence>() {
         return try {
             val rawTokens = obtainRawTokens(SMLLexerSpec.lexer, source)
             TokenSequence(buildTokenList(rawTokens))
-        } catch (e: Exception) {
-            print(e.message + " " + e.cause + " " + e.stackTraceToString())
-            print("Some error occurred during lexing! Falling back to tokenisation with recovery for this input.")
+        } catch (_: Exception) {
             tokeniseWithRecovery(source)
         }
     }

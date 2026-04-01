@@ -124,4 +124,35 @@ class ValueTest {
         // which means it does NOT recurse into its children for more tags.
         assertEquals(listOf("tag1" to "ab"), v.env())
     }
+
+    @Test
+    fun testPlusEquality() {
+        val v1 = Plus(listOf(Chr('a'), Chr('b')))
+        val v2 = Plus(listOf(Chr('a'), Chr('b')))
+        val v3 = Plus(listOf(Chr('a'), Chr('c')))
+        assertEquals(v1, v2)
+        assertNotEquals(v1, v3)
+        assertEquals(v1.hashCode(), v2.hashCode())
+        // Test against null and different types for full equals branch coverage
+        assertFalse(v1.equals(null))
+        assertFalse(v1.equals("not a Plus"))
+        assertTrue(v1.equals(v1)) // identity
+    }
+
+    @Test
+    fun testPlusCopyAndDestructuring() {
+        val v = Plus(listOf(Chr('a')))
+        // Access .vs property directly to cover the getter
+        assertEquals(listOf(Chr('a')), v.vs)
+        val (vs) = v
+        assertEquals(listOf(Chr('a')), vs)
+        val copy = v.copy(vs = listOf(Chr('b')))
+        assertEquals(Plus(listOf(Chr('b'))), copy)
+    }
+
+    @Test
+    fun testPlusToString() {
+        val v = Plus(listOf(Chr('a')))
+        assertTrue(v.toString().contains("Chr"))
+    }
 }

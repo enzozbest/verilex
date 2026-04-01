@@ -85,6 +85,55 @@ class RegularExpressionTest {
     }
 
     @Test
+    fun testCFUNEquality() {
+        val f: (Char) -> Boolean = { it == 'a' }
+        val r1 = CFUN("test", f)
+        val r2 = CFUN("test", f)
+        // Same lambda instance → equal
+        assertEquals(r1, r2)
+        assertEquals(r1.hashCode(), r2.hashCode())
+
+        // Different lambda instances with same name → not equal (lambdas compare by identity)
+        val r3 = CFUN("test") { it == 'a' }
+        val r4 = CFUN("test") { it == 'a' }
+        assertNotEquals(r3, r4)
+
+        // Different name → not equal
+        val r5 = CFUN("other", f)
+        assertNotEquals(r1, r5)
+
+        // Test against null and different types for full equals branch coverage
+        assertFalse(r1.equals(null))
+        assertFalse(r1.equals("not a CFUN"))
+        assertTrue(r1.equals(r1)) // identity
+
+        // Same name, different lambda → not equal (exercises asString-equal, f-not-equal branch)
+        val g: (Char) -> Boolean = { it == 'b' }
+        val r6 = CFUN("test", g)
+        assertNotEquals(r1, r6)
+    }
+
+    @Test
+    fun testCFUNCopyAndDestructuring() {
+        val f: (Char) -> Boolean = { it == 'x' }
+        val r = CFUN("test", f)
+        val (asString, func) = r
+        assertEquals("test", asString)
+        assertSame(f, func)
+    }
+
+    @Test
+    fun testCFUNPropertyAccess() {
+        val f: (Char) -> Boolean = { it == 'z' }
+        val r = CFUN("myPattern", f)
+        // Access properties directly to cover getAsString() and getF() getters
+        assertEquals("myPattern", r.asString)
+        assertSame(f, r.f)
+        assertTrue(r.f('z'))
+        assertFalse(r.f('a'))
+    }
+
+    @Test
     fun testALT() {
         val a = CFUN("a") { it == 'a' }
         val b = CFUN("b") { it == 'b' }
@@ -269,5 +318,117 @@ class RegularExpressionTest {
         val fSeq = RectificationFunctions.seq(RectificationFunctions.id, RectificationFunctions.id)
         assertEquals(Seq(Empty, Empty), fSeq(Seq(Empty, Empty)))
         assertThrows(IllegalArgumentException::class.java) { fSeq(Empty) }
+    }
+
+    @Test
+    fun testRectificationRight() {
+        val fRight = RectificationFunctions.right(RectificationFunctions.id)
+        assertEquals(Right(Empty), fRight(Empty))
+        assertEquals(Right(Chr('a')), fRight(Chr('a')))
+    }
+
+    @Test
+    fun testRectificationLeft() {
+        val fLeft = RectificationFunctions.left(RectificationFunctions.id)
+        assertEquals(Left(Empty), fLeft(Empty))
+        assertEquals(Left(Chr('a')), fLeft(Chr('a')))
+    }
+
+    @Test
+    fun testRectificationSeqEmpty1() {
+        val f = RectificationFunctions.seqEmpty1(RectificationFunctions.id, RectificationFunctions.id)
+        assertEquals(Seq(Empty, Chr('a')), f(Chr('a')))
+    }
+
+    @Test
+    fun testRectificationSeqEmpty2() {
+        val f = RectificationFunctions.seqEmpty2(RectificationFunctions.id, RectificationFunctions.id)
+        assertEquals(Seq(Chr('a'), Empty), f(Chr('a')))
+    }
+
+    @Test
+    fun testRectificationError() {
+        assertThrows(Exception::class.java) { RectificationFunctions.ERROR(Empty) }
+    }
+
+    @Test
+    fun testRectificationWithNonIdentityInnerFunctions() {
+        // alt with wrapping inner functions
+        val fAlt = RectificationFunctions.alt(
+            { v -> Seq(v, Empty) },
+            { v -> Seq(Empty, v) },
+        )
+        assertEquals(Left(Seq(Chr('a'), Empty)), fAlt(Left(Chr('a'))))
+        assertEquals(Right(Seq(Empty, Chr('b'))), fAlt(Right(Chr('b'))))
+
+        // seq with wrapping inner functions
+        val fSeq = RectificationFunctions.seq(
+            { v -> Left(v) },
+            { v -> Right(v) },
+        )
+        assertEquals(Seq(Left(Chr('a')), Right(Chr('b'))), fSeq(Seq(Chr('a'), Chr('b'))))
+
+        // recd with wrapping inner function
+        val fRecd = RectificationFunctions.recd { v -> Left(v) }
+        assertEquals(Rec("tag", Left(Empty)), fRecd(Rec("tag", Empty)))
+
+        // right with wrapping inner function
+        val fRight = RectificationFunctions.right { v -> Left(v) }
+        assertEquals(Right(Left(Empty)), fRight(Empty))
+
+        // left with wrapping inner function
+        val fLeft = RectificationFunctions.left { v -> Right(v) }
+        assertEquals(Left(Right(Empty)), fLeft(Empty))
+
+        // seqEmpty1 with wrapping inner functions
+        val fSeqE1 = RectificationFunctions.seqEmpty1(
+            { v -> Left(v) },
+            { v -> Right(v) },
+        )
+        assertEquals(Seq(Left(Empty), Right(Chr('x'))), fSeqE1(Chr('x')))
+
+        // seqEmpty2 with wrapping inner functions
+        val fSeqE2 = RectificationFunctions.seqEmpty2(
+            { v -> Left(v) },
+            { v -> Right(v) },
+        )
+        assertEquals(Seq(Left(Chr('x')), Right(Empty)), fSeqE2(Chr('x')))
+    }
+
+    @Test
+    fun testCharlist2rexp() {
+        // Empty list
+        assertEquals(ONE, charlist2rexp(emptyList()))
+        // Single char
+        assertEquals(CHAR('a'), charlist2rexp(listOf('a')))
+        // Multiple chars - recursive SEQ
+        val result = charlist2rexp(listOf('a', 'b', 'c'))
+        assertTrue(result is SEQ)
+        assertEquals(CHAR('a'), (result as SEQ).r1)
+        assertTrue(result.r2 is SEQ)
+    }
+
+    @Test
+    fun testStringToRegexSingleChar() {
+        assertEquals(CHAR('z'), "z".toRegex())
+    }
+
+    @Test
+    fun testStringXString() {
+        val result = "a" X "b"
+        assertTrue(result is ALT)
+    }
+
+    @Test
+    fun testStringFString() {
+        val result = "a" F "b"
+        assertTrue(result is SEQ)
+    }
+
+    @Test
+    fun testStringTString() {
+        val result = "tag" T "a"
+        assertTrue(result is RECD)
+        assertEquals("tag", result.x)
     }
 }
